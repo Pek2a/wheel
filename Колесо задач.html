@@ -1,0 +1,444 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Колесо задач</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@1,400&family=Barlow:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap">
+<style>
+/* Layout: чёрная секция на всю ширину. Дрейфующее свечение вместо видео, верхний и нижний градиенты в чёрный, по центру заголовок, колесо, две кнопки, внизу узкий футер. */
+:root {
+  color-scheme: dark;
+  --bg: #000000;
+  --fg: #ffffff;
+  --fg-60: rgba(255, 255, 255, 0.6);
+  --fg-40: rgba(255, 255, 255, 0.4);
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #ffffff;
+  --w1: #1f8a7a;
+  --w2: #e0633a;
+  --w3: #4468b8;
+  --w4: #c28f12;
+  --w5: #8a5bb8;
+  --w6: #34a04c;
+  --seg-ink: #ffffff;
+  --font-heading: "Instrument Serif", "Playfair Display", serif;
+  --font-body: "Barlow", "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.section { position: relative; overflow: hidden; padding-block: 96px 40px; }
+.bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.4; animation: drift 24s ease-in-out infinite alternate; }
+.b1 { width: 60vmax; height: 60vmax; left: -24vmax; top: 6%; background: #1f7a6d; }
+.b2 { width: 50vmax; height: 50vmax; right: -18vmax; top: 34%; background: #c4492a; animation-delay: -9s; }
+.b3 { width: 46vmax; height: 46vmax; left: 18%; bottom: -14%; background: #3a4fa0; animation-delay: -15s; }
+@keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, -5vmax) scale(1.15); } }
+.fade { position: absolute; left: 0; right: 0; height: 200px; z-index: 1; pointer-events: none; }
+.fade.top { top: 0; background: linear-gradient(to bottom, #000, transparent); }
+.fade.bottom { bottom: 0; background: linear-gradient(to top, #000, transparent); }
+.inner {
+  position: relative; z-index: 10;
+  max-width: 760px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+h1 {
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(3rem, 12vw, 4.5rem);
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+  margin: 0 0 16px;
+  max-width: 48rem;
+  text-wrap: balance;
+}
+.sub { color: var(--fg-60); font-weight: 300; font-size: 1rem; max-width: 36rem; margin: 0 auto 36px; }
+.stage { width: min(100%, 440px); aspect-ratio: 1; margin: 0 auto 28px; }
+.stage canvas { width: 100%; height: 100%; display: block; filter: drop-shadow(0 24px 60px rgba(255, 255, 255, 0.07)); }
+.panel { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+
+.liquid-glass-strong {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border: none;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass-strong::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.2) 80%, rgba(255,255,255,0.5) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.btn {
+  font: 500 0.875rem var(--font-body);
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 12px 24px;
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+.btn.glass:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.1); }
+.btn.solid { background: #fff; color: #000; border: 0; }
+.btn.solid:hover { background: rgba(255, 255, 255, 0.9); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:focus-visible, .foot-link:focus-visible, .add input:focus-visible, .del:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.btn svg { flex: none; }
+
+.result { width: 100%; max-width: 520px; margin: 28px auto 0; border-radius: 24px; padding: 20px 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.result .label { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-40); }
+.result .big { font-family: var(--font-heading); font-style: italic; font-weight: 400; font-size: clamp(1.5rem, 6vw, 2rem); line-height: 1.1; margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
+
+.hist { width: 100%; margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.hist-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.hist-head h2, .edit h2 { font-family: var(--font-body); font-size: 0.875rem; font-weight: 500; margin: 0; color: var(--fg-60); }
+.count { color: var(--fg-40); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0; padding: 0; list-style: none; }
+.chips li { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: 0.8125rem; color: var(--fg-60); }
+.reset { font: 300 0.8125rem var(--font-body); color: var(--fg-40); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.reset:hover { color: var(--fg); }
+
+.edit { width: 100%; max-width: 520px; margin-top: 48px; display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.add { display: flex; gap: 10px; }
+.add input {
+  flex: 1; min-width: 0;
+  font: 400 0.9375rem var(--font-body);
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 11px 18px;
+}
+.add input::placeholder { color: var(--fg-40); }
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-weight: 300; }
+.list li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.del { font: 400 0.75rem var(--font-body); color: var(--fg-60); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.del:hover:not(:disabled) { color: var(--fg); }
+.del:disabled { opacity: 0.4; cursor: default; }
+
+.footer { position: relative; z-index: 10; max-width: 760px; margin: 72px auto 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.footer-bar { border-top: 1px solid var(--line); padding-top: 32px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 16px; }
+.footer p { margin: 0; color: var(--fg-40); font-weight: 300; font-size: 0.75rem; }
+.foot-links { display: flex; gap: 24px; }
+.foot-link { background: none; border: 0; padding: 0; cursor: pointer; font: 300 0.75rem var(--font-body); color: var(--fg-40); transition: color 0.2s; }
+.foot-link:hover { color: rgba(255, 255, 255, 0.7); }
+@media (min-width: 768px) { .footer-bar { flex-direction: row; } }
+@media (prefers-reduced-motion: reduce) { .blob { animation: none; } * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="section">
+  <div class="bg" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="fade top" aria-hidden="true"></div>
+  <div class="fade bottom" aria-hidden="true"></div>
+
+  <div class="inner">
+    <h1>Колесо задач</h1>
+    <p class="sub">Крутани колесо и получи задачу на ближайшее время. Без раздумий, просто начни.</p>
+
+    <section id="panel-tasks" class="panel">
+      <div class="stage"><canvas id="c-tasks" aria-label="Колесо задач"></canvas></div>
+      <div class="row">
+        <button class="btn glass liquid-glass-strong" id="spin-tasks">Крутить
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+        </button>
+        <button class="btn solid switch" type="button">Колесо жанров
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+        </button>
+      </div>
+      <div class="result liquid-glass-strong" aria-live="polite">
+        <span class="label">Твоя задача</span>
+        <p class="big" id="task-out">Пока ничего не выпало</p>
+        <button class="btn glass liquid-glass-strong" id="to-genres" type="button" hidden>Выпало «все жанры». Крутить жанры</button>
+      </div>
+      <div class="edit">
+        <h2>Список задач</h2>
+        <form class="add" id="add-form">
+          <input id="new-task" type="text" maxlength="80" placeholder="Новая задача" autocomplete="off">
+          <button class="btn glass liquid-glass-strong" type="submit">Добавить</button>
+        </form>
+        <ul class="list" id="task-list"></ul>
+      </div>
+    </section>
+
+    <section id="panel-genres" class="panel" style="display:none">
+      <div class="stage"><canvas id="c-genres" aria-label="Колесо жанров музыки"></canvas></div>
+      <div class="row">
+        <button class="btn glass liquid-glass-strong" id="spin-genres">Крутить
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+        </button>
+        <button class="btn solid switch" type="button">Колесо задач
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+        </button>
+      </div>
+      <div class="result liquid-glass-strong" aria-live="polite">
+        <span class="label">Слушай сегодня</span>
+        <p class="big" id="genre-out">Пока ничего не выпало</p>
+      </div>
+      <div class="hist">
+        <div class="hist-head">
+          <h2>Выпавшие жанры</h2>
+          <span class="count" id="genre-count">0 из 44 разных</span>
+          <button class="reset" id="reset-genres" type="button">Сбросить</button>
+        </div>
+        <ul class="chips" id="genre-hist"></ul>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-bar">
+      <p>&copy; 2026 Колесо задач</p>
+      <div class="foot-links">
+        <button class="foot-link" type="button" id="f-tasks">Задачи</button>
+        <button class="foot-link" type="button" id="f-genres">Жанры</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var TAU = Math.PI * 2;
+  var DEFAULT_TASKS = [
+    { text: "Выучить все кости человеческого тела" },
+    { text: "3 часа тренировок игры в шахматы" },
+    { text: "Начать слушать все жанры музыки", special: true },
+    { text: "Выучить 50 слов на новом языке" },
+    { text: "Пройти 10 км пешком" },
+    { text: "Нарисовать автопортрет" },
+    { text: "Прочитать 100 страниц книги" },
+    { text: "Приготовить блюдо другой кухни мира" },
+    { text: "Выучить столицы всех стран Африки" },
+    { text: "Написать письмо от руки" }
+  ];
+  var GENRES = ["Рок","Поп","Хип-хоп","Джаз","Блюз","Классика","Электроника","Хаус","Техно","Дабстеп","Драм-н-бейс","Транс","Эмбиент","Метал","Панк","Регги","Фанк","Соул","R&B","Кантри","Фолк","Госпел","Диско","Латина","Босса-нова","Фламенко","Афробит","K-pop","J-pop","Шансон","Инди","Шугейз","Постпанк","Грайм","Трэп","Лоу-фай","Саундтреки","Опера","Барокко","Кельтская музыка","Рэгтайм","Свинг","Ска","Грандж","Metalcore","Hardcore","Deathcore","Grindcore","Mathcore","Post-hardcore","Emocore","Sasscore","Nintendocore","Electronicore","Crunkcore","Horrorcore","Nerdcore","Breakcore","Speedcore","Happy hardcore","Darkcore","Digital hardcore","Noisecore","Crustcore","Melodic hardcore","Trancecore","Synthcore","Doomcore"];
+
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+  }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+
+  var tasks = load("wheel-tasks", null);
+  if (!Array.isArray(tasks) || tasks.length < 2) tasks = DEFAULT_TASKS.slice();
+  var genreHist = load("wheel-genres", []);
+  if (!Array.isArray(genreHist)) genreHist = [];
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function Wheel(canvas, getLabels) {
+    this.canvas = canvas; this.getLabels = getLabels;
+    this.rot = 0; this.spinning = false; this.hl = -1;
+    this.ctx = canvas.getContext("2d");
+  }
+  function hexA(h, a) {
+    h = h.replace("#", "");
+    return "rgba(" + parseInt(h.substr(0, 2), 16) + "," + parseInt(h.substr(2, 2), 16) + "," + parseInt(h.substr(4, 2), 16) + "," + a + ")";
+  }
+  Wheel.prototype.draw = function () {
+    var c = this.canvas, ctx = this.ctx;
+    var size = c.clientWidth || 360, dpr = window.devicePixelRatio || 1;
+    if (c.width !== Math.round(size * dpr)) { c.width = Math.round(size * dpr); c.height = c.width; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    var labels = this.getLabels(), n = labels.length, seg = TAU / n;
+    var cx = size / 2, cy = size / 2;
+    var Rout = size / 2 - 8, ringW = Math.max(12, size * 0.034), R = Rout - ringW, hubR = size * 0.06;
+    var cols = [css("--w1"), css("--w2"), css("--w3"), css("--w4"), css("--w5"), css("--w6")];
+    var bg = css("--bg"), ink = css("--seg-ink"), accent = css("--accent");
+    var i, k;
+
+    /* стеклянное кольцо с огоньками */
+    ctx.beginPath();
+    ctx.arc(cx, cy, Rout, 0, TAU);
+    ctx.moveTo(cx + R, cy);
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    ctx.fill("evenodd");
+    ctx.beginPath(); ctx.arc(cx, cy, Rout, 0, TAU);
+    ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.stroke();
+    var lamps = 36;
+    for (k = 0; k < lamps; k++) {
+      var la = this.rot + k * TAU / lamps;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(la) * (R + ringW / 2), cy + Math.sin(la) * (R + ringW / 2), 2, 0, TAU);
+      ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.fill();
+    }
+
+    /* сегменты: прозрачные у центра, насыщенные к краю */
+    for (i = 0; i < n; i++) {
+      var a0 = this.rot + i * seg, a1 = a0 + seg;
+      var ci = i % cols.length;
+      if (i === n - 1 && n % cols.length === 1) ci = 2;
+      var g = ctx.createRadialGradient(cx, cy, hubR, cx, cy, R);
+      g.addColorStop(0, hexA(cols[ci], 0.3));
+      g.addColorStop(1, hexA(cols[ci], 0.92));
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath();
+      ctx.fillStyle = g; ctx.fill();
+      if (this.hl === i) { ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.fill(); }
+      ctx.lineWidth = 1; ctx.strokeStyle = "rgba(255,255,255,0.18)"; ctx.stroke();
+      ctx.save();
+      ctx.translate(cx, cy); ctx.rotate(a0 + seg / 2);
+      ctx.fillStyle = ink; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = 3;
+      var fs = n > 50 ? Math.max(7.5, size * 0.02) : n > 24 ? Math.max(9, size * 0.027) : Math.max(11, size * 0.034);
+      ctx.font = (this.hl === i ? "700 " : "500 ") + fs + "px Barlow, Inter, system-ui, sans-serif";
+      var maxW = R * (n > 50 ? 0.52 : 0.66), t = labels[i];
+      while (ctx.measureText(t).width > maxW && t.length > 3) t = t.slice(0, -2);
+      if (t !== labels[i]) t = t.replace(/\s+$/, "") + "…";
+      ctx.fillText(t, R - 12, 0);
+      ctx.restore();
+    }
+
+    /* блик стекла поверх диска */
+    var sh = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+    sh.addColorStop(0, "rgba(255,255,255,0.14)");
+    sh.addColorStop(0.5, "rgba(255,255,255,0)");
+    sh.addColorStop(1, "rgba(255,255,255,0.04)");
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU);
+    ctx.fillStyle = sh; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.stroke();
+
+    /* втулка */
+    ctx.beginPath(); ctx.arc(cx, cy, hubR, 0, TAU);
+    ctx.fillStyle = bg; ctx.fill();
+    var hg = ctx.createRadialGradient(cx, cy, 0, cx, cy, hubR);
+    hg.addColorStop(0, "rgba(255,255,255,0.35)");
+    hg.addColorStop(1, "rgba(255,255,255,0.04)");
+    ctx.fillStyle = hg; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.stroke();
+
+    /* указатель со свечением */
+    ctx.save();
+    ctx.shadowColor = "rgba(255,255,255,0.6)"; ctx.shadowBlur = 14;
+    ctx.fillStyle = accent; ctx.strokeStyle = accent; ctx.lineJoin = "round"; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx - 11, 5); ctx.lineTo(cx + 11, 5); ctx.lineTo(cx, 34); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  };
+  Wheel.prototype.winner = function () {
+    var n = this.getLabels().length, seg = TAU / n;
+    var p = ((-Math.PI / 2 - this.rot) % TAU + TAU) % TAU;
+    return Math.min(n - 1, Math.floor(p / seg));
+  };
+  Wheel.prototype.spin = function (done) {
+    if (this.spinning) return;
+    this.spinning = true; this.hl = -1;
+    var self = this, reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var start = this.rot, total = (reduce ? 2 : 6 + Math.floor(Math.random() * 3)) * TAU + Math.random() * TAU;
+    var dur = reduce ? 600 : 4800, t0 = null;
+    function frame(ts) {
+      if (t0 === null) t0 = ts;
+      var k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 4);
+      self.rot = start + total * e;
+      self.draw();
+      if (k < 1) requestAnimationFrame(frame);
+      else { self.spinning = false; self.hl = self.winner(); self.draw(); done(self.hl); }
+    }
+    requestAnimationFrame(frame);
+  };
+
+  var taskWheel = new Wheel(document.getElementById("c-tasks"), function () { return tasks.map(function (t) { return t.text; }); });
+  var genreWheel = new Wheel(document.getElementById("c-genres"), function () { return GENRES; });
+
+  var taskOut = document.getElementById("task-out");
+  var toGenres = document.getElementById("to-genres");
+  var spinTasks = document.getElementById("spin-tasks");
+  var spinGenres = document.getElementById("spin-genres");
+
+  spinTasks.addEventListener("click", function () {
+    spinTasks.disabled = true; toGenres.hidden = true;
+    taskWheel.spin(function (i) {
+      spinTasks.disabled = false;
+      taskOut.textContent = tasks[i].text;
+      toGenres.hidden = !tasks[i].special;
+    });
+  });
+  spinGenres.addEventListener("click", function () {
+    spinGenres.disabled = true;
+    genreWheel.spin(function (i) {
+      spinGenres.disabled = false;
+      document.getElementById("genre-out").textContent = GENRES[i];
+      if (genreHist.indexOf(GENRES[i]) === -1) { genreHist.push(GENRES[i]); save("wheel-genres", genreHist); }
+      renderHist();
+    });
+  });
+
+  function renderHist() {
+    var ul = document.getElementById("genre-hist");
+    ul.innerHTML = "";
+    genreHist.forEach(function (g) { var li = document.createElement("li"); li.textContent = g; ul.appendChild(li); });
+    document.getElementById("genre-count").textContent = genreHist.length + " из " + GENRES.length + " разных";
+  }
+  document.getElementById("reset-genres").addEventListener("click", function () {
+    genreHist = []; save("wheel-genres", genreHist); renderHist();
+    document.getElementById("genre-out").textContent = "Пока ничего не выпало";
+  });
+
+  function renderTasks() {
+    var ul = document.getElementById("task-list");
+    ul.innerHTML = "";
+    tasks.forEach(function (t, i) {
+      var li = document.createElement("li");
+      var s = document.createElement("span"); s.textContent = t.text;
+      var b = document.createElement("button"); b.className = "del"; b.type = "button"; b.textContent = "Убрать";
+      b.disabled = tasks.length <= 2;
+      b.setAttribute("aria-label", "Убрать задачу: " + t.text);
+      b.addEventListener("click", function () {
+        if (tasks.length <= 2) return;
+        tasks.splice(i, 1); save("wheel-tasks", tasks); renderTasks(); taskWheel.draw();
+      });
+      li.appendChild(s); li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  document.getElementById("add-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var inp = document.getElementById("new-task"), v = inp.value.trim();
+    if (!v || tasks.length >= 24) return;
+    tasks.push({ text: v }); save("wheel-tasks", tasks);
+    inp.value = ""; renderTasks(); taskWheel.draw();
+  });
+
+  var pT = document.getElementById("panel-tasks"), pG = document.getElementById("panel-genres");
+  var current = "tasks";
+  function show(which) {
+    current = which;
+    var g = which === "genres";
+    pT.style.display = g ? "none" : "flex"; pG.style.display = g ? "flex" : "none";
+    (g ? genreWheel : taskWheel).draw();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".switch"), function (b) {
+    b.addEventListener("click", function () { show(current === "tasks" ? "genres" : "tasks"); });
+  });
+  toGenres.addEventListener("click", function () { show("genres"); });
+  document.getElementById("f-tasks").addEventListener("click", function () { show("tasks"); window.scrollTo(0, 0); });
+  document.getElementById("f-genres").addEventListener("click", function () { show("genres"); window.scrollTo(0, 0); });
+
+  function redraw() { taskWheel.draw(); genreWheel.draw(); }
+  window.addEventListener("resize", redraw);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+
+  renderTasks(); renderHist(); show("tasks");
+})();
+</script>
+
+</body></html>
